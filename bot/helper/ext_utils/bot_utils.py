@@ -74,7 +74,7 @@ SIZE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
 STATUS_START = 0
 PAGES = 1
 PAGE_NO = 1
-STATUS_LIMIT = 4
+STATUS_LIMIT = 5
 
 class MirrorStatus:
     STATUS_UPLOADING = "Uploading"
@@ -199,7 +199,7 @@ def source(self):
 
 
 def get_readable_message():
-    msg = '<b>Powered by Aeon</b>\n\n'
+    msg = '<b><a href="https://t.me/Reaperzclub">Powered by Reapers-Club</a></b>\n\n'
     button = None
     tasks = len(download_dict)
     currentTime = get_readable_time(time() - botStartTime)
@@ -242,9 +242,7 @@ def get_readable_message():
         buttons.ibutton(f"{PAGE_NO}/{PAGES}", "status ref")
         buttons.ibutton("Next", "status nex")
         button = buttons.build_menu(3)
-    msg += f"<b>• Tasks</b>: {tasks}{bmax_task}"
-    msg += f"\n<b>• Bot uptime</b>: {currentTime}"
-    msg += f"\n<b>• Free disk space</b>: {get_readable_file_size(disk_usage('/usr/src/app/downloads/').free)}"
+    msg += f"<b>Tasks</b>: {tasks}{bmax_task} <b>| Bot uptime</b>: {currentTime} <b>| Free disk</b>: {get_readable_file_size(disk_usage('/usr/src/app/downloads/').free)}"
     return msg, button
 
 
@@ -299,7 +297,7 @@ def is_url(url):
 
 
 def is_gdrive_link(url):
-    return "drive.google.com" in url
+    return "drive.google.com" in url or "drive.usercontent.google.com" in url
 
 
 def is_telegram_link(url):
