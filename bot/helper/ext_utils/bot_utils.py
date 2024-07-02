@@ -216,12 +216,11 @@ def get_readable_message():
         msg += f"by {source(download)}\n"
         if download.status() not in [MirrorStatus.STATUS_SPLITTING, MirrorStatus.STATUS_SEEDING, MirrorStatus.STATUS_PROCESSING]:
             msg += f"<blockquote><code>{progress_bar(download.progress())}</code> {download.progress()}"
-            msg += f"\n{download.processed_bytes()} of {download.size()}"
-            msg += f"\nSpeed: {download.speed()}"
-            msg += f'\nEstimated: {download.eta()}'
+            msg += f"\n{download.processed_bytes()} of {download.size()} | {download.speed()}"
+            msg += f'\nETA: {download.eta()}'
             if hasattr(download, 'seeders_num'):
                 try:
-                    msg += f"\nSeeders: {download.seeders_num()} | Leechers: {download.leechers_num()}"
+                    msg += f" | S/L: {download.seeders_num()}/{download.leechers_num()}"
                 except:
                     pass
         elif download.status() == MirrorStatus.STATUS_SEEDING:
