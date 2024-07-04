@@ -29,7 +29,7 @@ psutil
 pybase64
 pycountry
 #pyrofork==2.2.11
-#pyroblack==2.3.86
+pyroblack==2.3.86
 python-dotenv
 pyshorteners
 python-magic
@@ -43,4 +43,4 @@ tgcrypto
 uvloop
 xattr
 yt-dlp==2023.10.07
-git+https://github.com/5hojib/pyrogram.git@dev
+#git+https://github.com/5hojib/pyrogram.git@dev
