@@ -28,8 +28,8 @@ pillow
 psutil
 pybase64
 pycountry
-#pyrofork==2.2.11
-pyroblack==2.3.86
+pyrofork==2.2.11
+#pyroblack==2.3.86
 python-dotenv
 pyshorteners
 python-magic
