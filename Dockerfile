@@ -1,4 +1,4 @@
-FROM 5hojib/aeon:dev
+FROM dawn001/logi:main
 
 WORKDIR /usr/src/app
 RUN chmod 777 /usr/src/app
