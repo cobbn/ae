@@ -212,15 +212,14 @@ def get_readable_message():
         globals()['STATUS_START'] = STATUS_LIMIT * (PAGES - 1)
         globals()['PAGE_NO'] = PAGES
     for download in list(download_dict.values())[STATUS_START:STATUS_LIMIT+STATUS_START]:
-        msg += f"<b>{download.status()}:</b> {escape(f'{download.name()}')}\n"
-        msg += f"by {source(download)}\n"
+        msg += f"<b>{download.status()}: {escape(f'{download.name()}')}</b>\n"
         if download.status() not in [MirrorStatus.STATUS_SPLITTING, MirrorStatus.STATUS_SEEDING, MirrorStatus.STATUS_PROCESSING]:
             msg += f"<blockquote><code>{progress_bar(download.progress())}</code> {download.progress()}"
             msg += f"\n{download.processed_bytes()} of {download.size()} | {download.speed()}"
-            msg += f'\nETA: {download.eta()}'
+            msg += f'\n<b>ETA:</b> {download.eta()} <b>| {source(download)}</b>'
             if hasattr(download, 'seeders_num'):
                 try:
-                    msg += f" | S/L: {download.seeders_num()}/{download.leechers_num()}"
+                    msg += f" <b>| S/L:</b> {download.seeders_num()}/{download.leechers_num()}"
                 except:
                     pass
         elif download.status() == MirrorStatus.STATUS_SEEDING:
@@ -231,8 +230,8 @@ def get_readable_message():
             msg += f"\nTime: {download.seeding_time()}"
         else:
             msg += f"<blockquote>Size: {download.size()}"
-        msg += f"\nElapsed: {get_readable_time(time() - download.message.date.timestamp())}</blockquote>"
-        msg += f"\n<blockquote>/stop_{download.gid()[:8]}</blockquote>\n\n"
+        msg += f"\n<b>Elapsed:</b> {get_readable_time(time() - download.message.date.timestamp())}</blockquote>"
+        msg += f"\n<b><blockquote>/stop_{download.gid()[:8]}</blockquote></b>\n\n"
     if len(msg) == 0:
         return None, None
     if tasks > STATUS_LIMIT:
