@@ -1,30 +1,22 @@
 from urllib.parse import urlparse
-from base64 import b64encode
-from datetime import datetime
 from os import path as ospath
-from pkg_resources import get_distribution
 from aiofiles import open as aiopen
-from aiofiles.os import remove as aioremove, path as aiopath, mkdir
+from aiofiles.os import path as aiopath, mkdir
 from re import match as re_match
 from time import time
 from html import escape
 from uuid import uuid4
-from subprocess import run as srun
 from asyncio import create_subprocess_exec, create_subprocess_shell, run_coroutine_threadsafe, sleep
 from asyncio.subprocess import PIPE
 from functools import partial, wraps
 from concurrent.futures import ThreadPoolExecutor
 
 from aiohttp import ClientSession as aioClientSession
-from psutil import virtual_memory, cpu_percent, disk_usage
-from requests import get as rget
-from mega import MegaApi
-from pyrogram.enums import ChatType
+from psutil import disk_usage
 from pyrogram.types import BotCommand
-from pyrogram.errors import PeerIdInvalid
 
 from bot.helper.ext_utils.db_handler import DbManager
-from bot import OWNER_ID, bot_name, DATABASE_URL, LOGGER, aria2, download_dict, download_dict_lock, botStartTime, user_data, config_dict, bot_loop, extra_buttons, user
+from bot import bot_name, DATABASE_URL, LOGGER, download_dict, download_dict_lock, botStartTime, user_data, config_dict, bot_loop, extra_buttons
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.telegraph_helper import telegraph
@@ -74,7 +66,7 @@ SIZE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
 STATUS_START = 0
 PAGES = 1
 PAGE_NO = 1
-STATUS_LIMIT = 5
+STATUS_LIMIT = 4
 
 class MirrorStatus:
     STATUS_UPLOADING = "Uploading"
@@ -151,11 +143,11 @@ def bt_selection_buttons(id_):
     pincode = ''.join([n for n in id_ if n.isdigit()][:4])
     buttons = ButtonMaker()
     BASE_URL = config_dict['BASE_URL']
-    buttons.ubutton("Select", f"{BASE_URL}/app/files/{id_}")
-    buttons.ibutton("Pincode", f"btsel pin {gid} {pincode}")
-    buttons.ibutton("Cancel", f"btsel rm {gid} {id_}")
-    buttons.ibutton("Done Selecting", f"btsel done {gid} {id_}")
-    return buttons.build_menu(2)
+    buttons.url("Select", f"{BASE_URL}/app/files/{id_}")
+    buttons.callback("Pincode", f"btsel pin {gid} {pincode}")
+    buttons.callback("Cancel", f"btsel rm {gid} {id_}")
+    buttons.callback("Done Selecting", f"btsel done {gid} {id_}")
+    return buttons.column(2)
 
 
 async def get_telegraph_list(telegraph_content):
@@ -163,17 +155,19 @@ async def get_telegraph_list(telegraph_content):
     if len(path) > 1:
         await telegraph.edit_telegraph(path, telegraph_content)
     buttons = ButtonMaker()
-    buttons.ubutton("View", f"https://telegra.ph/{path[0]}")
+    buttons.url("View", f"https://telegra.ph/{path[0]}")
     buttons = extra_btns(buttons)
-    return buttons.build_menu(1)
+    return buttons.column(1)
 
 
 def handleIndex(index, dic):
     while True:
         if abs(index) < len(dic):
             break
-        if index < 0: index = len(dic) - abs(index)
-        elif index > 0: index = index - len(dic)
+        if index < 0:
+            index = len(dic) - abs(index)
+        elif index > 0:
+            index = index - len(dic)
     return index
 
 
@@ -199,7 +193,7 @@ def source(self):
 
 
 def get_readable_message():
-    msg = '<b><a href="https://t.me/Reaperzclub">Powered by Reapers-Club</a></b>\n\n'
+    msg = '<b>Powered by Aeon</b>\n\n'
     button = None
     tasks = len(download_dict)
     currentTime = get_readable_time(time() - botStartTime)
@@ -212,15 +206,17 @@ def get_readable_message():
         globals()['STATUS_START'] = STATUS_LIMIT * (PAGES - 1)
         globals()['PAGE_NO'] = PAGES
     for download in list(download_dict.values())[STATUS_START:STATUS_LIMIT+STATUS_START]:
-        msg += f"<b>{download.status()}: {escape(f'{download.name()}')}</b>\n"
+        msg += f"<b>{download.status()}:</b> {escape(f'{download.name()}')}\n"
+        msg += f"by {source(download)}\n"
         if download.status() not in [MirrorStatus.STATUS_SPLITTING, MirrorStatus.STATUS_SEEDING, MirrorStatus.STATUS_PROCESSING]:
             msg += f"<blockquote><code>{progress_bar(download.progress())}</code> {download.progress()}"
-            msg += f"\n{download.processed_bytes()} of {download.size()} | {download.speed()}"
-            msg += f'\n<b>ETA:</b> {download.eta()} <b>| {source(download)}</b>'
+            msg += f"\n{download.processed_bytes()} of {download.size()}"
+            msg += f"\nSpeed: {download.speed()}"
+            msg += f'\nEstimated: {download.eta()}'
             if hasattr(download, 'seeders_num'):
                 try:
-                    msg += f" <b>| S/L:</b> {download.seeders_num()}/{download.leechers_num()}"
-                except:
+                    msg += f"\nSeeders: {download.seeders_num()} | Leechers: {download.leechers_num()}"
+                except Exception:
                     pass
         elif download.status() == MirrorStatus.STATUS_SEEDING:
             msg += f"<blockquote>Size: {download.size()}"
@@ -230,17 +226,19 @@ def get_readable_message():
             msg += f"\nTime: {download.seeding_time()}"
         else:
             msg += f"<blockquote>Size: {download.size()}"
-        msg += f"\n<b>Elapsed:</b> {get_readable_time(time() - download.message.date.timestamp())}</blockquote>"
-        msg += f"\n<b><blockquote>/stop_{download.gid()[:8]}</blockquote></b>\n\n"
+        msg += f"\nElapsed: {get_readable_time(time() - download.message.date.timestamp())}</blockquote>"
+        msg += f"\n<blockquote>/stop_{download.gid()[:8]}</blockquote>\n\n"
     if len(msg) == 0:
         return None, None
     if tasks > STATUS_LIMIT:
         buttons = ButtonMaker()
-        buttons.ibutton("Prev", "status pre")
-        buttons.ibutton(f"{PAGE_NO}/{PAGES}", "status ref")
-        buttons.ibutton("Next", "status nex")
-        button = buttons.build_menu(3)
-    msg += f"<b>Tasks</b>: {tasks}{bmax_task} <b>| Bot uptime</b>: {currentTime} <b>| Free disk</b>: {get_readable_file_size(disk_usage('/usr/src/app/downloads/').free)}"
+        buttons.callback("Prev", "status pre")
+        buttons.callback(f"{PAGE_NO}/{PAGES}", "status ref")
+        buttons.callback("Next", "status nex")
+        button = buttons.column(3)
+    msg += f"<b>• Tasks</b>: {tasks}{bmax_task}"
+    msg += f"\n<b>• Bot uptime</b>: {currentTime}"
+    msg += f"\n<b>• Free disk space</b>: {get_readable_file_size(disk_usage('/usr/src/app/downloads/').free)}"
     return msg, button
 
 
@@ -295,7 +293,7 @@ def is_url(url):
 
 
 def is_gdrive_link(url):
-    return "drive.google.com" in url or "drive.usercontent.google.com" in url
+    return "drive.google.com" in url
 
 
 def is_telegram_link(url):
@@ -362,7 +360,7 @@ async def get_content_type(url):
         async with aioClientSession(trust_env=True) as session:
             async with session.get(url, verify_ssl=False) as response:
                 return response.headers.get('Content-Type')
-    except:
+    except Exception:
         return None
 
 
@@ -453,7 +451,7 @@ async def checking_access(user_id, button=None):
         time_str = get_readable_time(token_timeout, True)
         if button is None:
             button = ButtonMaker()
-        button.ubutton('Collect token', tinyfy(short_url(f'https://telegram.me/{bot_name}?start={token}')))
+        button.url('Collect token', tinyfy(short_url(f'https://telegram.me/{bot_name}?start={token}')))
         return f'Your token has expired, please collect a new token.\n<b>It will expire after {time_str}</b>!', button
     return None, button
 
@@ -461,7 +459,7 @@ async def checking_access(user_id, button=None):
 def extra_btns(buttons):
     if extra_buttons:
         for btn_name, btn_url in extra_buttons.items():
-            buttons.ubutton(btn_name, btn_url)
+            buttons.url(btn_name, btn_url)
     return buttons
 
 
