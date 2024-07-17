@@ -222,6 +222,7 @@ def get_readable_message():
             msg += f"\nRatio: {download.ratio()}"
             msg += f"\nTime: {download.seeding_time()}"
         else:
+            msg += f"<blockquote>Size: {download.size()}"
         msg += f"\n<b>User:</b>{source(download)} | <b>/stop_{download.gid()[:8]}</b></blockquote>\n\n"
     if len(msg) == 0:
         return None, None
